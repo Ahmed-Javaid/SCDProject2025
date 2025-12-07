@@ -1,10 +1,11 @@
 function validateRecord(record) {
-  if (!record.name || !record.value) throw new Error('Record must have both name and value.');
+  if (!record.name) throw new Error('Record must have a name.');
   return true;
 }
 
 function generateId() {
-  return Date.now();
+  // Generate a shorter random ID (100000-999999)
+  return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
 module.exports = { validateRecord, generateId };
