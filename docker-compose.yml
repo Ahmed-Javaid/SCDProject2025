@@ -1,0 +1,50 @@
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: mongodb-compose
+    networks:
+      nodevault-network:
+        ipv4_address: 172.21.0.10
+    volumes:
+      - mongodb-data:/data/db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
+    ports:
+      - "27017:27017"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  nodevault:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: nodevault:v1.0
+    container_name: nodevault-compose
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      nodevault-network:
+        ipv4_address: 172.21.0.20
+    environment:
+      - MONGODB_URI=mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@172.21.0.10:27017/nodevault?authSource=admin
+      - NODE_ENV=production
+    restart: unless-stopped
+    command: tail -f /dev/null
+
+networks:
+  nodevault-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16
+          gateway: 172.21.0.1
+
+volumes:
+  mongodb-data:
+    driver: local
